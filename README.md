@@ -22,6 +22,38 @@ LCI Agent provides context intelligence infrastructure for AI applications. It r
 # Install
 pip install lci-agent
 
+## Installation
+
+### From Source (Recommended for now)
+```bash
+# Clone the repo
+git clone https://github.com/rumiza-shaikh/lci-agent.git
+cd lci-agent
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set up your API key
+cp .env.example .env
+# Edit .env and add your ANTHROPIC_API_KEY
+
+# Run your first query
+python lci_agent.py "What are the GSTIN filing rules?"
+```
+
+### Try It Out
+```bash
+# The agent will create sample context automatically
+# Then it will answer your query using that context
+
+# Add your own context
+echo "Your context here" > context_data/myfile.txt
+
+# Ask questions about your context
+python lci_agent.py "What does myfile say?"
+```
+```
+
 # Start the agent
 lci-agent start
 
