@@ -1,12 +1,17 @@
 """
 LCI Agent - Universal Context Infrastructure for AI
 Version 0.1.0 - Day 1
+Powered by Google Gemini (Free)
 """
 
-from anthropic import Anthropic
+import google.generativeai as genai
 import os
 from pathlib import Path
 from typing import List, Dict
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 class LCIAgent:
     """
@@ -15,9 +20,11 @@ class LCIAgent:
     
     def __init__(self, api_key: str = None):
         """Initialize the agent"""
-        self.client = Anthropic(
-            api_key=api_key or os.environ.get("ANTHROPIC_API_KEY")
+        # Configure Gemini
+        genai.configure(
+            api_key=api_key or os.environ.get("GEMINI_API_KEY")
         )
+        self.model = genai.GenerativeModel("gemini-1.5-flash")
         self.context_dir = Path("./context_data")
         self.context_dir.mkdir(exist_ok=True)
     
@@ -38,12 +45,12 @@ class LCIAgent:
             with open(file, 'r') as f:
                 content = f.read()
                 
-                # Simple relevance check (we'll improve this)
+                # Simple relevance check
                 if any(word.lower() in content.lower() 
                        for word in query.split()):
                     context.append({
                         "source": file.name,
-                        "content": content[:1000],  # First 1000 chars
+                        "content": content[:1000],
                         "type": "local_file"
                     })
         
@@ -57,19 +64,19 @@ class LCIAgent:
         
         Args:
             query: User's question
-            sources: List of sources to use (default: ["local"])
+            sources: List of sources to use
             
         Returns:
             Dict with context, response, and metadata
         """
-        # Step 1: Get context
+        # Step 1: Get local context
         context_items = self.get_local_context(query)
         
         if not context_items:
             return {
                 "query": query,
                 "context": [],
-                "response": "No relevant context found.",
+                "response": "No relevant context found in local files.",
                 "sources_checked": ["local"],
                 "sources_used": []
             }
@@ -87,19 +94,13 @@ Local Context Available:
 
 User Query: {query}
 
-Please answer based on the local context provided. Always cite which source you used.
+Please answer based ONLY on the local context provided. 
+Always cite which source you used.
 If the context doesn't contain the answer, say so clearly."""
         
-        # Step 3: Call LLM
-        message = self.client.messages.create(
-            model="gemini-1.5-flash",
-            max_tokens=1024,
-            messages=[
-                {"role": "user", "content": prompt}
-            ]
-        )
-        
-        response_text = message.content[0].text
+        # Step 3: Call Gemini
+        response = self.model.generate_content(prompt)
+        response_text = response.text
         
         # Step 4: Return structured response
         return {
@@ -108,9 +109,10 @@ If the context doesn't contain the answer, say so clearly."""
             "response": response_text,
             "sources_checked": ["local"],
             "sources_used": [item["source"] for item in context_items],
-            "model": "claude-sonnet-4",
-            "timestamp": "2026-02-15"  # We'll make this dynamic later
+            "model": "gemini-1.5-flash",
+            "timestamp": "2026-02-16"
         }
+
 
 # Simple CLI interface
 if __name__ == "__main__":
@@ -142,13 +144,15 @@ if __name__ == "__main__":
     print("CONTEXT RETRIEVED:")
     print("=" * 50)
     for item in result["context"]:
-        print(f"\n📄 {item['source']}")
+        print(f"\n📄 Source: {item['source']}")
         print(f"   {item['content'][:200]}...")
     
     print("\n" + "=" * 50)
-    print("RESPONSE:")
+    print("LCI AGENT RESPONSE:")
     print("=" * 50)
     print(result["response"])
     
     print("\n" + "=" * 50)
-    print(f"Sources used: {', '.join(result['sources_used'])}")
+    print(f"✓ Model: {result['model']}")
+    print(f"✓ Sources used: {', '.join(result['sources_used'])}")
+    print(f"✓ Sources checked: {', '.join(result['sources_checked'])}")
