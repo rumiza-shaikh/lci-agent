@@ -92,7 +92,7 @@ If the context doesn't contain the answer, say so clearly."""
         
         # Step 3: Call LLM
         message = self.client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="gemini-1.5-flash",
             max_tokens=1024,
             messages=[
                 {"role": "user", "content": prompt}
